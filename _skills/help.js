@@ -1,4 +1,4 @@
-module.exports = function(controller) {
+___module.exports = function(controller) {
 
 
     // This before middleware allows the help command to accept sub-thread names as a parameter

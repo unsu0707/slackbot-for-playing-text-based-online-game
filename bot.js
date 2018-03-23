@@ -66,9 +66,10 @@ var debug = require('debug')('botkit:main');
 var bot_options = {
     clientId: process.env.clientId,
     clientSecret: process.env.clientSecret,
-    // debug: true,
+    //debug: true,
     scopes: ['bot'],
     studio_token: process.env.studio_token,
+    //rtm_receive_messages: true,
     studio_command_uri: process.env.studio_command_uri
 };
 
@@ -128,7 +129,7 @@ if (!process.env.clientId || !process.env.clientSecret) {
 
   // enable advanced botkit studio metrics
   require('botkit-studio-metrics')(controller);
-
+console.log(11111);
   var normalizedPath = require("path").join(__dirname, "skills");
   require("fs").readdirSync(normalizedPath).forEach(function(file) {
     require("./skills/" + file)(controller);

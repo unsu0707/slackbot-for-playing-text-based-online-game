@@ -8,6 +8,17 @@ var hbs = require('express-hbs');
 
 module.exports = function(controller) {
 
+  /*
+  controller.setupWebserver(process.env.port,function(err,webserver) {
+
+  // set up web endpoints for oauth, receiving webhooks, etc.
+  controller
+    .createHomepageEndpoint(controller.webserver)
+    .createOauthEndpoints(controller.webserver,function(err,req,res) { ... })
+    .createWebhookEndpoints(controller.webserver);
+
+});
+  */
     var webserver = express();
     webserver.use(cookieParser());
     webserver.use(bodyParser.json());
