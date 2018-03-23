@@ -1,8 +1,10 @@
 module.exports = function(controller) {
-  
   function random(max, min = 0){
     return Math.round(Math.random()*(max-min)+min);
   }
+  
+  const userScope = 'direct_message,ambient';
+  const adminScope = 'direct';
   
   class User {
     constructor(slack_id, name){
@@ -14,7 +16,7 @@ module.exports = function(controller) {
       [this.str,this.sta,this.int,this.con,this.agi,this.luk] = [6,6,6,6,6,6];
       this.atk = this.str*2;
       this.def = this.con*1.5;
-      this.place = 1;
+      this.place = "시작방";
       this.inven = [];
       this.equip = {"무기":null,"방어구":null,"장신구":null};
       this.mny = 0;
@@ -367,13 +369,26 @@ module.exports = function(controller) {
       let prefix = "["+usr.name+"]";
       res += prefix;
       res += "님의 소지품";
-      for (let i=0;i<usr.inven.length;i++){
-        if(usr.inven[i]){
-          res += " "+usr.inven[i].getName()+" ";
+      let callback_id = 'select_item_'+message.user;
+      let avail_list = [];
+      for(var key in usr.inven){
+        if (usr.inven[key]){
+          avail_list.push({"name":key,"text":usr.inven[key].name,"value":key,"type":"button"});
         }
       }
+      
+    bot.reply(message, {
+        attachments:[
+            {
+                title: prefix+'소지품',
+                callback_id: callback_id,
+                attachment_type: 'default',
+                actions: avail_list
+            }
+        ]
+    });
+  
     }
-    bot.reply(message, res);
   }
   
   function showEquip(usr,bot,message){
@@ -413,21 +428,302 @@ module.exports = function(controller) {
     bot.reply(message, res);
   }
   
-  controller.hears(["^시작 ([가-힣]+)$"],'direct_message',(bot,message) => {
+  //([가-힣]+) 봐
+  function showItemInfo(usr,bot,message){
+    let res = "";
+    if(usr){
+      
+    }
+    bot.reply(message,res);    
+  }
+  
+  //([가-힣]+) 먹어|사용
+  function intakeItem(usr,bot,message){
+    let res = "";
+    if(usr){
+      
+    }
+    bot.reply(message,res);
+  }
+  
+  //상점
+  function showMerchantList(usr,bot,message){
+    let res = "";
+    if(usr){
+      
+    }
+    bot.reply(message,res);    
+  }
+  
+  //[무기상|갑옷상|...] 
+  function showMerchantItemList(usr,bot,message){
+    let res = "";
+    if(usr){
+      
+    }
+    bot.reply(message,res);    
+  }
+  
+  function buyMerchantItem(usr,bot,message){
+    let res = "";
+    if(usr){
+      
+    }
+    bot.reply(message,res);    
+  }
+  
+  function sellMerchantItem(usr,bot,message){
+    let res = "";
+    if(usr){
+      
+    }
+    bot.reply(message,res);    
+  }
+  
+  function levelUpItem(usr,bot,message){
+    let res = "";
+    if(usr){
+      
+    }
+    bot.reply(message,res);    
+  }
+  
+  controller.hears(["^시작 ([가-힣]+)$"],userScope,(bot,message) => {
     console.log(message.user);
     controller.storage.users.get(message.user, function(err, user){
       newUserStart(user,bot,message);
     });
   });
   
-  controller.hears(["^접속$"],'direct_message',(bot,message) => {
+  controller.hears(["^접속$"],userScope,(bot,message) => {
     console.log(message.match[0]);
     controller.storage.users.get(message.user, function(err, user){
       userConnect(user.info,bot,message);
     });
   });
-    
-  controller.hears(["^사냥$"],'direct_message',(bot,message) => {
+  class Room {
+    constructor(name,desc="",arr={}){
+      this.name = name;
+      this.desc = desc;
+      this.ways = arr;
+      this.objs = [];
+    }
+  }
+  function getOppoWay(way){
+    let res = "";
+    switch(way){
+      case "동":
+        res="서";
+        break;        
+      case "서":
+        res="동";
+        break;
+      case "남":
+        res="북";
+        break;
+      case "북":
+        res="남";
+        break;
+      case "위":
+        res="밑";
+        break;
+      case "밑":
+        res="위";
+        break;
+      default:
+        res="밖";
+        break;
+              }
+    return res;
+  }
+  function checkSameRoom(world,name){
+    let res = false;
+    for(var roomName in world){
+      if(roomName == name){
+        res = true;
+        break;
+      }
+    }
+    return res;
+  }
+  controller.hears(["^월드 (생성|확인|삭제)$"],userScope,(bot,message) => {
+    console.log(message.match[0]);
+    controller.storage.teams.get(message.team, function(err, team){
+      switch (message.match[1]) {
+      case "생성":
+          controller.storage.users.get(message.user, function(err, user){
+            let newWorld = {};
+            let firstRoom = new Room("시작방","이 곳은 시작하면 도착하는 방입니다.");
+            newWorld["시작방"] = firstRoom;      
+            user.info.place = "시작방";
+            firstRoom.objs.push(user.info);
+            team.world = newWorld;
+            controller.storage.users.save(user, function(err, id) {
+              console.log("User saved!!");
+            });
+            controller.storage.teams.save(team, function(err, id){
+              console.log("World saved!!"); 
+            });
+          });
+        break;
+      case "확인":
+        if(team.world){
+              for(var room in team.world){
+                let log = "";
+                log += room +":";
+                log += "[ways]";
+                for (var way in team.world[room].ways){
+                  log += "("+way+")"+team.world[room].ways[way]+" ";
+                }
+                log += "[objs]";
+                for (var obj in team.world[room].objs){
+                  log += "("+obj+")"+team.world[room].objs[obj].name+" ";
+                }
+                console.log(log);
+              }
+        }
+        break;
+      case "삭제":
+        if(team.world){
+          delete team.world;
+            controller.storage.teams.save(team, function(err, id){
+              console.log("World saved!!"); 
+            });
+        }
+        break;
+      }
+    });
+  });
+  
+  function makeNewRoom(world,bot,message){
+    let res = "";
+    if(world){
+      let roomName = message.match[1];
+      if (checkSameRoom(world,roomName) == false){
+        let newRoom = new Room(roomName);
+        world[roomName] = newRoom;
+        res += "새로운 방("+world[roomName].name+")이 만들어졌습니다.";
+      }else{
+        res += "이미 같은 이름의 방이 존재합니다.";
+      }
+    }
+    bot.reply(message,res);
+  }
+  
+  controller.hears(["^방만들기 (.+)$"],userScope,(bot,message) => {
+    console.log(message.match[0]);
+    controller.storage.teams.get(message.team, function(err, team){
+      makeNewRoom(team.world,bot,message);
+      controller.storage.teams.save(team, function(err, id){console.log("World saved!!");});
+    });
+  });
+  
+  function connRoom(world,bot,message){
+    let res = "";
+    if(world){
+      console.log("world is exist");
+        let roomWay = message.match[1];
+        let roomWay2 = getOppoWay(roomWay);
+        let roomNameFrom = message.match[2];
+        let roomNameTo = message.match[3];
+      if(world[roomNameFrom] && world[roomNameTo]){
+        console.log("world["+roomNameFrom+","+roomNameTo+"] is exist");
+        let roomFrom = world[roomNameFrom];
+        let roomTo = world[roomNameTo];
+        roomFrom.ways[roomWay] = roomNameTo;
+        roomTo.ways[roomWay2] = roomNameFrom;          
+      }else{
+        res += "그런 이름의 방이 없습니다. ("+roomNameFrom+","+roomNameTo+")";
+      }
+    }
+    bot.reply(message,res);
+  }
+  
+  controller.hears(["^방연결 ([가-힣]+) (.+) (.+)$"],userScope,(bot,message) => {
+    console.log(message.match[0]);
+    controller.storage.teams.get(message.team, function(err, team){
+        connRoom(team.world,bot,message);
+        controller.storage.teams.save(team, function(err, id){console.log("World saved!!");});
+    });
+  });
+  
+  function showRoom(world,user,bot,message){
+    let res = "";
+    if(world && user){
+      if(world[user.place]){
+        let nowRoom = world[user.place];
+        res += `[${nowRoom.name}]\n`;
+        res += `${nowRoom.desc}\n`;
+        res += "출구 : ";
+        for (var way in nowRoom.ways){
+          if ( way && nowRoom.ways[way] )
+            res += way+",";
+        }
+        res += "\n";
+        for (var objName in nowRoom.objs){
+          let obj = nowRoom.objs[objName];
+          if(obj){
+            let desc;
+            if(obj.desc){
+              desc = obj.desc;
+            }else{
+              desc = obj.name+"이(가) 있습니다.";
+            }
+            res += desc+"\n";
+          }
+        }
+      }
+    }
+    bot.reply(message, res);
+  }
+  
+  controller.hears(["^(봐|주변|현재위치)$"],userScope,(bot,message) => {
+    console.log(message.match[0]);
+    controller.storage.teams.get(message.team, function(err, team){
+      controller.storage.users.get(message.user, function(err, user){
+        showRoom(team.world,user.info,bot,message);
+      });
+    });
+  });
+  function remove(array, element) {
+    const index = array.indexOf(element);
+    if (index !== -1) {
+        array.splice(index, 1);
+    }else{
+      for(var obj in array){
+        if(array[obj].name == element.name)
+          delete array[obj];
+      }
+    }
+  }
+  function moveRoom(world,user,bot,message){
+    let res = "";
+    if(world && user) {
+      let way = message.match[1];
+      let roomFrom = world[user.place];
+      let roomTo = world[roomFrom.ways[way]];
+      if(roomTo){
+        remove(roomFrom.objs, user);
+        roomTo.objs.push(user);
+        user.place = roomTo.name;
+        showRoom(world,user,bot,message);
+      }
+    }
+    bot.reply(message,res);
+  }
+  
+  controller.hears(["^(동|서|남|북|위|밑|밖)$","^([가-힣]+) 가$"],userScope,(bot,message) => {
+    console.log(message.match[0]);
+    controller.storage.teams.get(message.team, function(err, team){
+      controller.storage.users.get(message.user, function(err, user){
+        moveRoom(team.world,user.info,bot,message);
+        controller.storage.users.save(user, function(err, id){console.log("User saved!!");});
+        controller.storage.teams.save(team, function(err, id){console.log("World saved!!");});
+      });
+    });
+  });
+  
+  controller.hears(["^사냥$"],userScope,(bot,message) => {
     console.log(message.match[0]);
     controller.storage.users.get(message.user, function(err, user){
       selectDungeon(user.info,bot,message);
@@ -436,9 +732,64 @@ module.exports = function(controller) {
       });
     });
   });
+  function throwItem(world,user,bot,message){
+  let res = "";
+  if(world && user){
+    let itemName = message.param[1];
+    let item = user.getItem(itemName);
+    if(item){
+      remove(user.inven,item);
+      world[user.place].objs.push(item);
+      res += `${user.name}님이 ${item.name}을(를) 땅에 버렸습니다.`;
+    }
+  }
+  bot.reply(res);
+}
   
+  controller.hears(["^([가-힣]+) 버려$"],userScope,(bot,message) => {
+    console.log(message.match[0]);
+    controller.storage.teams.get(message.team, function(err, team){
+      controller.storage.users.get(message.user, function(err, user){
+        throwItem(team.world,user.info,bot,message);
+        controller.storage.users.save(user, function(err, id){console.log("User saved!!");});
+        controller.storage.teams.save(team, function(err, id){console.log("World saved!!");});
+      });
+    });
+  });
   
-  controller.hears(["^(소|소지|소지품|템|아이템|소지템)$"],'direct_message',(bot,message) => {
+
+function pickItem(world,user,bot,message){
+  let res = "";
+  if(world && user){
+    let itemName = message.param[1];
+	let item;
+	for (var obj in world[user.place].objs){
+	  if(world[user.place].objs[obj].name == itemName){
+	    item = world[user.place].objs[obj];
+		break;
+	  }
+	}
+	if(item){
+	  user.inven.push(item);
+	  remove(world[user.place].objs,item);
+	  res += `${user.name}님이 ${item.name}을(를) 주웠습니다.`;
+	}
+  }
+  bot.reply(res);
+}
+
+  controller.hears(["^([가-힣]+) 가져$"],userScope,(bot,message) => {
+    console.log(message.match[0]);
+    controller.storage.teams.get(message.team, function(err, team){
+      controller.storage.users.get(message.user, function(err, user){
+        pickItem(team.world,user.info,bot,message);
+        controller.storage.users.save(user, function(err, id){console.log("User saved!!");});
+        controller.storage.teams.save(team, function(err, id){console.log("World saved!!");});
+      });
+    });
+  });
+  
+  controller.hears(["^(소|소지|소지품|템|아이템|소지템)$"],userScope,(bot,message) => {
     console.log(message.match[0]);
     controller.storage.users.get(message.user, function(err, user){
       showInven(user.info,bot,message);
@@ -446,7 +797,7 @@ module.exports = function(controller) {
   });
   
   
-  controller.hears(["^(장비)$"],'direct_message',(bot,message) => {
+  controller.hears(["^(장비)$"],userScope,(bot,message) => {
     console.log(message.match[0]);
     controller.storage.users.get(message.user, function(err, user){
       showEquip(user.info,bot,message);
@@ -454,7 +805,7 @@ module.exports = function(controller) {
   });
   
   
-  controller.hears(["^해제 ([가-힣]+)$"],'direct_message',(bot,message) => {
+  controller.hears(["^([가-힣]+) (해제|벗어)$"],userScope,(bot,message) => {
     console.log(message.match[0]);
     controller.storage.users.get(message.user, function(err, user){
       unsetEquip(user.info,bot,message);
@@ -465,7 +816,7 @@ module.exports = function(controller) {
     });
   });
   
-  controller.hears(["^착용 ([가-힣]+)$"],'direct_message',(bot,message) => {
+  controller.hears(["^([가-힣]+) (착용|입어)$"],userScope,(bot,message) => {
     console.log(message.match[0]);
     controller.storage.users.get(message.user, function(err, user){
       setEquip(user.info,bot,message);
@@ -479,10 +830,16 @@ module.exports = function(controller) {
   controller.on('interactive_message_callback', function(bot, message) {
     console.log(message.callback_id);
     controller.storage.users.get(message.user, function(err, user){
-      if (message.callback_id.includes("select_dungeon") && message.callback_id.includes(message.user) ) {
-        goDungeon(user.info,bot,message);
+      if (message.callback_id.includes(message.user)){
+        if (message.callback_id.includes("select_dungeon") ) {
+          goDungeon(user.info,bot,message);
+        }
+        if (message.callback_id.includes("select_item")){
+          showItemInfo(user.info,bot,message);
+        }
+        
         controller.storage.users.save(user, function(err, id) {
-          console.log("saved!!");
+          console.log("");
         });
       }
     });
