@@ -1,11 +1,61 @@
 module.exports = function(controller) {
+  
+  ///-------------- 공통 변수/상수 --------------------------///
+  const userScope = 'direct_message,ambient';
+  const adminScope = 'direct';
+  const broadcast_channel = "C9W1H2SE9";  
+    
+  const dungeons = {"초보수련장":[1,{"목각인형":100}],
+                    "초원":[1,{"토끼":40,"다람쥐":50,"들개":10}],
+                    "버섯숲":[3,{"팽이벌레":20,"목이벌레":20,"석이벌레":20,"송이벌레":20,"꽃송이벌레":10,"새송이벌레":10}],
+                    "가시동굴":[5,{"풀덩굴두더지":20,"가시덩굴두더지":20,"독거미":20,"작은뱀":20,"큰뱀":20}],
+                    "일일사던전":[6,{"취활중":10,"나반장":25,"히바리가오카역장":25,"뽀로리":20,"JUN님":20}]
+                   };
+  const mob_info = {
+  "목각인형":{level:1,item:{"나무토막":20, "회복스킬북":80}},
+  "토끼":{level:2,item:{"토끼고기":90, "복권":10}},
+  "다람쥐":{level:3,item:{"도토리":80, "알밤":10, "복권":10}},
+  "들개":{level:5,item:{"뼈조각":20}},
+  "팽이벌레":{level:10,item:{"식용버섯":30, "힘의반지":2, "지식의반지":1}},
+  "목이벌레":{level:11,item:{"식용버섯":30, "힘의반지":1, "지식의반지":2}},
+  "석이벌레":{level:12,item:{"식용버섯":30, "힘의반지":3}},
+  "송이벌레":{level:13,item:{"식용버섯":30, "지식의반지":3}},
+  "꽃송이벌레":{level:15,item:{"식용버섯":30, "힘의반지":3, "지식의반지":3}},
+  "새송이벌레":{level:20,item:{"식용버섯":30, "힘의반지":3, "지식의반지":3}},
+  "풀덩굴두더지":{level:22,item:{"힘의반지":20},},
+  "가시덩굴두더지":{level:24,item:{"지식의반지":20},},
+  "독거미":{level:26,item:{"힘의반지":20,"지식의반지":20},},
+  "작은뱀":{level:23,item:{"힘의반지":20,"지식의반지":20},},
+  "큰뱀":{level:27,item:{"힘의반지":20,"지식의반지":20},},
+    "나반장":{level:30,item:{},weapon:"강철맥북",expr:["모서리로 찍었다", "펼쳤다 접어서 얼굴을 짜부시켰다", "때렸다"]},
+    "히바리가오카역장":{level:35,item:{},weapon:"와인병",expr:["때렸다","찔렀다"]},
+    "뽀로리":{level:50,item:{},weapon:"황금도토리",expr:["떼ㅐ렷슴다","명치룰 가ㄱ갹격했슴ㅏㄷ", "던져서 맞췄슴다"]},
+    "깜모":{level:100,item:{},},
+    "취활중":{level:999,item:{},weapon:"국어사전",expr:["그럼, 공격 해봅니다.","개인 프라이버시가 중요하다는 그런 입장을 가지고 여러 의견을 한마디로 이야기 하려고 했을 때 다들 저의 발언을 잘 들어주셨으면 감사하겠습니다.", "P마크가 있는 기업체를 정리하며 취업을 준비하는 그런 입장을 가지려고 노력하고 있습니다.", "그럼, 타격 남겨봅니다.", "그럼, 의견 남겨봅니다.", "그럼, 한대 때려봅니다."]},
+    "JUN님":{level:40,item:{},weapon:"강철낚시대",expr:["'안녕허새요'라고 인사하며 때렸다","낚시바늘을 입에 걸었다","휘둘렀다"]}
+  };  
+  
+  const item_info = {
+    "목검":{type:"무기",stat:{atk:1},price:100,dur:50},
+    "천옷":{type:"방어구",stat:{def:1},price:100,dur:50},
+    "힘의반지":{type:"장신구",stat:{str:1},price:500,dur:10},
+    "지식의반지":{type:"장신구",stat:{int:1},price:500,dur:10},
+    "토끼고기":{price:10,stat:{hp:5}},
+    "도토리":{price:10,stat:{hp:10}},
+    "복권":{price:500},
+    "뼈조각":{price:50},
+    "알밤":{price:100},
+    "나무토막":{price:5},
+    "식용버섯":{price:100,stat:{hp:50}},
+    "회복스킬북":{price:1000},
+  }
+  
+  
   function random(max, min = 0){
     return Math.round(Math.random()*(max-min)+min);
   }
   
-  const userScope = 'direct_message,ambient';
-  const adminScope = 'direct';
-  
+    
   class User {
     constructor(slack_id, name){
       this.slack_id = slack_id;
@@ -20,6 +70,8 @@ module.exports = function(controller) {
       this.inven = [];
       this.equip = {"무기":null,"방어구":null,"장신구":null};
       this.mny = 0;
+      this.stp = 5;
+      this.skill = {};
     }
     getItem(itemName){
       for(let i=0;i<this.inven.length;i++){
@@ -31,63 +83,37 @@ module.exports = function(controller) {
       console.log("null");
       return null;
     }
-    addItem(item){
-      this.inven.push(item);
-      let msg = "\n *"+item.name+"* 을 획득했습니다.";
-      return msg;
-    }
-    setEquip(item){
-      let type = item.type;
-      if(this.equip[type]){
-        this.unsetEquip(this.equip[type]);
-      }
-      for(let i in this.inven){
-        if(this.inven[i] == item){
-          
-          this.equip[type] = item;
-          let removed = this.inven.splice(i,1);
-        }
-      }
-      return `\n * ${this.equip[type].getName()} * 을 ${type}에 착용했습니다.`;
-    }
-    unsetEquip(item){
-          console.log(item.name+"을 조사");
-      for(let type in this.equip){
-        if (this.equip[type] == item){
-          console.log(item.name+"을 "+type+"에 착용중");
-          this.inven.push(item);
-          delete this.equip[type];
-          return `\n *${item.name}* 을 착용 해제했습니다.`;
-        }else{
-          console.log(item.name+"을 "+type+"에 착용중이지 않음.");
-        }
-      }
-      return `그런 아이템을 착용하고 있지 않습니다. ${item.name}`;
-    }
-    addExp(exp){
+  }
+  
+    function addExp(usr, exp){
       let msg = "";
       let up_level = 0;
-      this.exp[0] += exp;
-      msg += "\n경험치 "+exp+"획득!";
-      while (this.exp[0] >= this.exp[1]){
-        this.exp[0] -= this.exp[1];
+      usr.exp[0] += exp;
+      msg += "\n *경험치* +"+exp+" 획득!";
+      while (usr.exp[0] >= usr.exp[1]){
+        usr.exp[0] -= usr.exp[1];
         up_level ++;
-        this.level ++;
-        this.exp[1] = this.level*100;
+        usr.level ++;
+        usr.stp += 2;
+        msg += `레벨업! ${usr.level-1} -> ${usr.level} (수련치 2 획득)`
+        usr.exp[1] = usr.level*100;
+        usr.hp[0] = usr.hp[1];
       }
       if(up_level >0){
-        msg += `레벨 ${up_level} 상승! 현재 레벨 ${this.level}`
+        msg += `레벨 ${up_level} 상승! 현재 레벨 ${usr.level}`
       }
-      msg += "[경험치 : "+this.exp.join("/")+"]";
+      msg += "[경험치 : "+usr.exp.join("/")+"]";
+      console.log(msg);
       return msg;
     }    
-    addMny(mny){
+    function addMny(usr, mny){
       let msg = "";
-      this.mny += mny;
-      msg += "\n돈 "+mny+"획득! [소지금 :"+this.mny+"]";
+      usr.mny += mny;
+      msg += "\n *"+mny+" 골드* 획득! [현재 소지금 : "+usr.mny+" 골드]";
+      console.log(msg);
       return msg;
     }
-  }
+  
   class Item {
     constructor(name,arr){
       //this.id = ;
@@ -97,6 +123,7 @@ module.exports = function(controller) {
       if (arr.type) this.type = arr.type;
       if (arr.stat) this.stat = arr.stat;
       if (arr.dur)  this.dur = [arr.dur,arr.dur];
+      this.equiped = false;
     }
     getName(){
       if(this.type == "무기" || this.type == "방어구" || this.type == "장신구")
@@ -104,69 +131,28 @@ module.exports = function(controller) {
       return `${this.name}`;      
     }
   }
-  const item_info = {
-    "목검":{type:"무기",stat:{atk:1},price:100,dur:50},
-    "천옷":{type:"방어구",stat:{def:1},price:100,dur:50},
-    "힘의반지":{type:"장신구",stat:{str:1},price:500,dur:10},
-    "지식의반지":{type:"장신구",stat:{int:1},price:500,dur:10},
-    "토끼고기":{price:10,stat:{hp:5}},
-    "도토리":{price:10,stat:{hp:10}},
-    "복권":{price:500},
-    "뼈조각":{price:50},
-    "알밤":{price:100},
-    "나무토막":{price:5}
-  }
-  /*
-    무기
-    {
-      이름 : "목검"
-      등급 : +5
-      공격력 : 10
-      가격 : 1000      
-      타입 : "무기"
-      내구 : 100/100
-    }
-    방어구
-    {
-      이름 : "천갑옷"
-      등급 : +0
-      방어력 : 5
-      가격 : 1000
-      타입 : "방어구"
-      내구 : 100/100
-    }
   
-  */
   class Mob {
     constructor(name, arr){
       this.name = name;
       this.level = arr.level;
-      if(!arr.hp) arr.hp = arr.level * 10;
-      if(!arr.mp) arr.mp = arr.level * 5;
-      if(!arr.atk) arr.atk = arr.level * 2;
-      if(!arr.def) arr.def = arr.level * 1;
-      if(!arr.mny) arr.mny = arr.level * 1;
-      if(!arr.exp) arr.exp = arr.level * 5;
+      if(!arr.hp) arr.hp = arr.level * 10 - random(arr.level) + random(arr.level);
+      if(!arr.mp) arr.mp = arr.level * 5 - random(arr.level) + random(arr.level);
+      if(!arr.atk) arr.atk = arr.level * 2 + random(arr.level/2) - random(arr.level/2);
+      if(!arr.def) arr.def = arr.level * 1 + random(arr.level/4) - random(arr.level/4);
+      if(!arr.mny) arr.mny = arr.level * 1 + random(arr.level/4) - random(arr.level/4);
+      if(!arr.exp) arr.exp = arr.level * 4 - random(arr.level) + random(arr.level);
       [this.hp,this.mp] = [[arr.hp,arr.hp],[arr.mp,arr.mp]];
       this.atk = arr.atk;
       this.def = arr.def;
       this.mny = arr.mny;
       this.exp = arr.exp;
       this.inven = arr.inven;
+      this.weapon = arr.weapon;
+      this.expr = arr.expr;
     }
   }
   
-  const places = ["공허","방","광장","초보수련장","앞마당"];
-  const dungeons = {"초보수련장":[1,{"목각인형":100}],
-                    "앞마당":[1,{"토끼":40,"다람쥐":50,"들개":10}]};
-  const mob_info = {
-  "목각인형":{level:1,item:{"나무토막":20}},
-  "토끼":{level:2,item:{"토끼고기":90, "복권":10}},
-  "다람쥐":{level:3,item:{"도토리":80, "알밤":10, "복권":10}},
-  "들개":{level:5,item:{"뼈조각":20}}
-  };
-  
-  let users = {};
   
   
   function newUserStart(user,bot, message){
@@ -181,8 +167,8 @@ module.exports = function(controller) {
             id: message.user,
             info: newUser
           };
-          res += user.info.addItem(weapon);
-          res += user.info.addItem(armor);
+          res += user.info.inven.push(weapon);
+          res += user.info.inven.push(armor);
           controller.storage.users.save(user, function(err, id) {
             res += "\n가입되었습니다. 유저명 : "+user.info.name;
             bot.reply(message,res);
@@ -191,21 +177,6 @@ module.exports = function(controller) {
           res += "이미 가입되었습니다. 유저명 : "+user.info.name;
           bot.reply(message,res);
         }
-    /*
-    console.log("slack id : "+slack_id+", name : "+name);
-    console.log("get user..");
-    let user_info = getUserInfo(slack_id);
-    console.log(user_info);
-    if(user_info){
-      res += "이미 가입된 유저입니다. 유저명 :"+user_info.name;
-      bot.reply(message,res);
-    }else{
-      controller.storage.users.save(newUser, function(err, id) {
-        res += "가입되었습니다. 유저명 : "+newUser.name;
-        bot.reply(message,res);
-      });
-    }
-    */
   }
   
   function userConnect(usr,bot, message){
@@ -220,185 +191,55 @@ module.exports = function(controller) {
     }
     bot.reply(message,res);
   }
-  
-  function selectDungeon(usr, bot, message){
-    let res = "";
-    if(usr){
-      let callback_id = 'select_dungeon_'+message.user;
-      let avail_list = [];
-      for(var key in dungeons){
-        if (dungeons[key][0] <= usr.level){
-          avail_list.push({"name":key,"text":key,"value":key,"type":"button"});
-        }
-      }
-      let prefix = "["+usr.name+"]";
-    bot.reply(message, {
-        attachments:[
-            {
-                title: prefix+'사냥터를 선택하세요.',
-                callback_id: callback_id,
-                attachment_type: 'default',
-                actions: avail_list
-            }
-        ]
-    });
-    }else{
-      res = "";
-    }
-    bot.reply(message,res);
-  }
-  
-  function genMob(mobs){
-    let ran_next = 0; //다음 몹 등장확률
-    let inven = [];
-    let percent = 100;
-    //50, 40, 10
-    //0~50, 51~90, 91~100
-    for (var key in mobs){
-      let ran = random(percent); //몹 등장확률
-      let ran_next = mobs[key];
-      console.log(key+":"+ran_next+"/"+ran);
-      if(ran_next >= ran){
-        //Gen!
-        let mobInfo = mob_info[key];
-        let arr = {level:mobInfo.level};
-        
-        percent = 100;
-        
-        if(mobInfo.item){
-          let ran_item_next = 0;
-          let items = mobInfo.item;
-          for(var ikey in items){
-            let ran_item = random(percent);
-            let ran_item_next = items[ikey];
-            console.log(ikey+":"+ran_item_next+"/"+ran_item);
-            if(ran_item_next >= ran_item){
-              let item = item_info[ikey];
-              console.log(ikey+":"+item.price);
-              inven.push(new Item(ikey, item));
-              break;
-            }else{
-              percent -= ran_item_next;
-            }
-          }
-          arr.inven = inven;
-        }
-        let mob = new Mob(key, arr);
-        console.log(mob.name+":"+mob.level+":"+mob.inven[0]);
-        return mob;        
-      }else{
-        percent -= ran_next;
-      }
-    }    
-  }
-  function fight(usr, mob){
-    let prompt = "";
-      prompt += usr.name+"(Lv."+usr.level+")[공"+usr.atk+"방"+usr.def+"] VS ";
-      prompt += mob.name+"(Lv."+mob.level+")[공"+mob.atk+"방"+mob.def+"]\n";
-    while(usr.hp[0] > 0 && mob.hp[0] > 0){
-      let usr_dmg = (usr.atk - mob.def > 0)?usr.atk - mob.def:0;
-      let mob_dmg = (mob.atk - usr.def > 0)?mob.atk - usr.def:0;
-      mob.hp[0] -= usr_dmg;
-      prompt += usr.name+"이(가) "+mob.name+"을(를) 공격했다. -"+usr_dmg+" ["+mob.hp.join("/")+"] \n";
-      if(mob.hp[0] <= 0){
-        prompt += mob.name+"이(가) 쓰러졌다.";
-        //전리품
-        for(var key in mob.inven){
-          if(mob.inven[key]){
-            console.log(mob.inven[key].name);
-            let item = mob.inven[key];
-            prompt += usr.addItem(item);
-          }
-        }
-        console.log(prompt);
-        //돈획득
-        prompt += usr.addMny(mob.mny);
-        console.log(prompt);
-        //경험치획득
-        prompt += usr.addExp(mob.exp);
-        console.log(prompt);
-        mob = null;
-        break;
-      }
-      
-      usr.hp[0] -= mob_dmg;
-      prompt += mob.name+"이(가) "+usr.name+"을(를) 공격했다. -"+mob_dmg+" ["+usr.hp.join("/")+"] \n";
-      
-      if(usr.hp[0] <= 0){
-        prompt += usr.name+"이(가) 쓰러졌다.";
-        break;
-      }
-    //usr turn
-      //mob.hp[0] -= usr.atk - mob.def;
-    //mob turn
-      //usr.hp[0] -= mob.atk - usr.def;
-      
-    }
-        console.log(prompt);
-    return prompt;
-  }
-  function goDungeon(usr, bot, message){
-    let res = "";
-    if(usr){
-      var text = ""
-
-      let prefix = "["+usr.name+"]";
-      text += prefix;
-      const name = message.actions[0].name;
-      let dungeon = dungeons[name];
-      if(dungeon){
-        let mobList = dungeon[1];
-        let mob = genMob(mobList);
-        console.log(mob.name+":"+mob.level+":"+mob.inven[0]);
-        text += " *"+mob.name+"* (Lv."+mob.level+")이(가) 모습을 드러냈다!"
-        text += fight(usr,mob);
-        
-      }else{
-        text += "그런 이름의 사냥터가 없습니다.";
-      }
-
-      bot.replyInteractive(message, {
-        "text": text
-      });
-    }
-  }
-  
   function showInven(usr,bot,message){
     let res = "";
     if(usr){
       let prefix = "["+usr.name+"]";
       res += prefix;
-      res += "님의 소지품";
-      let callback_id = 'select_item_'+message.user;
-      let avail_list = [];
-      for(var key in usr.inven){
-        if (usr.inven[key]){
-          avail_list.push({"name":key,"text":usr.inven[key].name,"value":key,"type":"button"});
+      res += "님의 소지품\n";
+      let item_list = {};
+      for (var i=0;i<usr.inven.length;i++){
+        if(usr.inven[i]){
+          let name = usr.inven[i].name;
+          if(item_list[name]){
+            item_list[name]++;
+          }else{
+            item_list[name]=1;
+          }
         }
       }
+      for (let key in item_list){
+        res += `${key}`;
+        if(item_list[key] > 1){
+          res += `(x${item_list[key]})`;
+        }
+        res += ",";
+      }
       
-    bot.reply(message, {
-        attachments:[
-            {
-                title: prefix+'소지품',
-                callback_id: callback_id,
-                attachment_type: 'default',
-                actions: avail_list
-            }
-        ]
-    });
+    bot.reply(message, res);
   
     }
   }
+  
+  controller.hears(["^(소|소지|소지품|템|아이템|소지템)$"],userScope,(bot,message) => {
+    console.log(message.match[0]);
+    controller.storage.users.get(message.user, function(err, user){
+      showInven(user.info,bot,message);
+    });
+  });
   
   function showEquip(usr,bot,message){
     let res = "";
     if(usr){
       let prefix = "["+usr.name+"]";
       res += prefix+"님이 착용중인 장비 : ";
-      for (var key in usr.equip){
+      console.log(res);
+      for(var key in usr.equip){
         if(usr.equip[key]){
-          res += `[${key}] ${usr.equip[key].getName()}`;
+          res += `[${key}]${usr.equip[key].name}`;
+          for(var key2 in usr.equip[key].stat){
+            res += `(${key2}:${usr.equip[key].stat[key2]})`;
+          }
         }
       }
     }
@@ -409,10 +250,25 @@ module.exports = function(controller) {
     let res = "";
     if(usr){
       let itemName = message.match[1];
-      console.log(itemName);
-      let item = usr.getItem(itemName);
-      console.log(item.name);
-      res = usr.setEquip(item);
+      console.log(itemName+"을 가져옵니다.");
+      for(let i=0;i<usr.inven.length;i++){
+        if(itemName == usr.inven[i].name){
+          let type = usr.inven[i].type;
+          if(["무기","방어구","장신구"].indexOf(type) >= 0){
+            if(usr.equip[type]){
+              let equipedItem = usr.equip[type];
+              usr.equip[type].equiped = false;
+              res += usr.equip[type].name+"을 해제했습니다."; 
+            }
+            usr.equip[type] = usr.inven[i];
+            usr.inven[i].equiped = true;
+            res += usr.equip[type].name+"을 착용했습니다.";
+          }else{
+            res += "착용할 수 없는 아이템입니다.";
+          }
+          break;
+        }
+      }
     }
     bot.reply(message, res);
   }
@@ -441,10 +297,39 @@ module.exports = function(controller) {
   function intakeItem(usr,bot,message){
     let res = "";
     if(usr){
-      
+      let item_name = message.match[1];
+      let ind = -1;
+      for (var i=0;i<usr.inven.length;i++){
+        if(item_name == usr.inven[i].name){
+          console.log("inventory ["+i+"] = "+usr.inven[i].name);
+          ind = i;
+          break;
+        }
+      }
+      if(ind > 0){
+      let item = usr.inven[ind];
+        if(item && item.stat.hp > 0){
+          usr.hp[0] += item.stat.hp;
+          if(usr.hp[0] > usr.hp[1]) usr.hp[0] = usr.hp[1];
+          res += usr.name+"님이 "+item.name+"을(를) 먹고 체력 "+item.stat.hp+"을 회복합니다.";
+          usr.inven.splice(ind,1);
+        }
+      }
     }
     bot.reply(message,res);
   }
+  
+  
+  controller.hears(["^([가-힣]+) 먹어$"],userScope,(bot,message) => {
+    console.log(message.match[0]);
+    controller.storage.users.get(message.user, function(err, user){
+      console.log(user.info);
+      intakeItem(user.info,bot,message);
+      controller.storage.users.save(user, function(err, id) {
+        console.log("saved!!");
+      });
+    });
+  });
   
   //상점
   function showMerchantList(usr,bot,message){
@@ -723,21 +608,354 @@ module.exports = function(controller) {
     });
   });
   
-  controller.hears(["^사냥$"],userScope,(bot,message) => {
+  function trainStat(user,bot,message){
+    let res = "";
+    if(user) {
+      if(user.stp > 0){
+        let stat_name;
+        switch(message.match[1])
+        {
+          case "힘":
+            stat_name = "str";
+            break;
+          case "민첩":
+            stat_name = "agi";
+            break;
+          case "지식":
+            stat_name = "int";
+            break;
+          case "맷집":
+            stat_name = "sta";
+            break;
+          case "집중":
+            stat_name = "con";
+            break;
+          case "운":
+            stat_name = "luk";
+            break;
+          case "체력":
+          case "HP":
+          case "hp":
+            stat_name = "hp";
+            break;
+          case "마력":
+          case "MP":
+          case "mp":
+            stat_name = "mp";
+        }
+        if(stat_name == "hp" || stat_name == "mp"){
+          const pnt = Math.round(user[stat_name][1]/10);;
+          user[stat_name][1] += pnt;
+          res += `${message.match[1]}을 수련하여 ${pnt} 만큼 향상되었습니다. ${user[stat_name][1]-pnt} -> ${user[stat_name][1]}`;
+          user.stp --;
+        }else if(user[stat_name]){
+          user[stat_name]++;
+          res += `${message.match[1]}을 수련하여 1 만큼 향상되었습니다. ${user[stat_name]-1} -> ${user[stat_name]}`;
+          user.stp --;
+        }
+      }else{
+        res += "수련치가 부족합니다. 레벨업으로 수련치를 획득하세요. `정보` ";
+      }
+    }
+    bot.reply(message,res);
+  }
+  
+  controller.hears(["^([가-힣]+) (수련|올려|향상)$"],userScope,(bot,message) => {
+    console.log(message.match[0]);
+      controller.storage.users.get(message.user, function(err, user){
+        trainStat(user.info,bot,message);
+        controller.storage.users.save(user, function(err, id){console.log("User saved!!");});
+      });
+  });
+  
+  function learnSkill(user,bot,message){
+let res="";
+if (user){
+  
+  if (!user.skill){
+    console.log("no skill");
+    let skillarr = {};
+	  user.skill = skillarr;
+  }
+  let skill_name = message.match[1];
+  for(var i=0;i<user.inven.length;i++){
+    console.log(`${user.inven[i].name} VS ${skill_name}스킬북`);
+    if(user.inven[i].name == `${skill_name}스킬북`){
+      console.log("스킬북 발견");
+      user.inven.splice(i,1);
+      res += skill_name+" 스킬북을 정독합니다.\n";
+      if(user.skill[skill_name] > 0){
+        res += `${skill_name} 스킬의 레벨이 향상되었습니다. ${user.skill[skill_name]++}`;
+      res += `${user.skill[skill_name]}\n`;
+      }else{
+        user.skill[skill_name] = 1;
+        res += `${skill_name} 스킬을 획득하였습니다. 현재 스킬레벨 : 1\n`;
+      res += "`"+skill_name+" 시전` 으로 사용할 수 있습니다.\n";
+      }
+      break;
+	  }
+  }
+}
+bot.reply(message,res);
+  }
+  
+  controller.hears(["^([가-힣]+) 배워$"],userScope,(bot,message) => {
+    console.log(message.match[0]);
+      controller.storage.users.get(message.user, function(err, user){
+        learnSkill(user.info,bot,message);
+        controller.storage.users.save(user, function(err, id){console.log("User saved!!");});
+      });
+  });
+  
+  function useSkill(user,bot,message){
+let res="";
+if (user){
+  let skill_name = message.match[1];
+  if (!user.skill){
+    user.skill = {};
+  }
+  if (user.skill[skill_name] > 0){
+    const skill_level = user.skill[skill_name];
+    switch(skill_name){
+      case "회복":
+          res += "*회복* 스킬을 외웁니다. '윙가르디움레비오-사!!삼이일땡!!' \n"
+          const eff = Math.round(skill_level*100 * random(4,2)/2);
+          user.hp[0] += eff;
+          if(user.hp[1] < user.hp[0]) user.hp[0] = user.hp[1];
+          res += `성스러운 기운으로 체력이 ${eff} 만큼 회복됩니다. [${user.hp.join("/")}]`;
+        break;
+    }
+  }else{
+    res += "그런 스킬을 배운 적이 없습니다. 스킬북이 있으면 `(스킬이름) 배워` 로 배워보세요. ";
+  }
+}
+bot.reply(message,res);
+  }
+  
+  controller.hears(["^([가-힣]+) 시전$"],userScope,(bot,message) => {
+    console.log(message.match[0]);
+      controller.storage.users.get(message.user, function(err, user){
+        useSkill(user.info,bot,message);
+        controller.storage.users.save(user, function(err, id){console.log("User saved!!");});
+      });
+  });
+  
+  
+  
+  function genMob(mobs){
+    let ran_next = 0; //다음 몹 등장확률
+    let inven = [];
+    let percent = 100;
+    //50, 40, 10
+    //0~50, 51~90, 91~100
+    for (var key in mobs){
+      let ran = random(percent); //몹 등장확률
+      let ran_next = mobs[key];
+      console.log(key+":"+ran_next+"/"+ran);
+      if(ran_next >= ran){
+        //Gen!
+        let mobInfo = mob_info[key];
+        let arr = {level:mobInfo.level,weapon:mobInfo.weapon,expr:mobInfo.expr};
+        
+        percent = 100;
+        
+        if(mobInfo.item){
+          let ran_item_next = 0;
+          let items = mobInfo.item;
+          for(var ikey in items){
+            let ran_item = random(percent);
+            let ran_item_next = items[ikey];
+            console.log(ikey+":"+ran_item_next+"/"+ran_item);
+            if(ran_item_next >= ran_item){
+              let item = item_info[ikey];
+              console.log(ikey+":"+item.price);
+              inven.push(new Item(ikey, item));
+              break;
+            }else{
+              percent -= ran_item_next;
+            }
+          }
+          arr.inven = inven;
+        }
+        let mob = new Mob(key, arr);
+        console.log(mob.name+":"+mob.level+":"+mob.inven[0]);
+        return mob;        
+      }else{
+        percent -= ran_next;
+      }
+    }    
+  }
+  function getAtk(usr){
+    let res = 0;
+    res += Math.round(usr.level + usr.str*1.5 + usr.sta/2 + usr.luk/5);
+    if (usr.equip["무기"]){
+      res += usr.equip["무기"].stat.atk;
+    }    
+    return res;
+  }
+  function getDef(usr){
+    let res = 0;
+    res += Math.round(usr.level + usr.sta*1.5 + usr.str/3 + usr.agi/5 + usr.luk/5);
+    if (usr.equip["방어구"]){
+      res += usr.equip["방어구"].stat.def;
+    }    
+    return res;
+  }
+  
+  function fight(usr, mob){
+    usr.atk = getAtk(usr);
+    usr.def = getDef(usr);
+    let prompt = "";
+      prompt += usr.name+"(Lv."+usr.level+") [ATK "+usr.atk+"/DEF "+usr.def+"] VS ";
+      prompt += mob.name+"(Lv."+mob.level+")[ATK "+mob.atk+"/DEF "+mob.def+"]\n";
+    while(usr.hp[0] > 0 && mob.hp[0] > 0){
+      console.log(prompt);
+      let usr_dmg = (usr.atk - mob.def) + random(usr.luk/3+usr.con/3) - random(2);
+      if(usr_dmg<0) usr_dmg=random(usr.con/3+usr.luk/3);
+      if(usr_dmg>0){
+      mob.hp[0] -= usr_dmg;
+      let usr_wpn = "맨손";
+      if(usr.equip["무기"]) usr_wpn = usr.equip["무기"].name;
+      prompt += usr.name+"이(가) "+mob.name+"을(를) "+usr_wpn+"(으)로 공격했다.: -"+usr_dmg+" ["+mob.hp.join("/")+"] \n";
+      console.log(prompt);
+      if(mob.hp[0] <= 0){
+        prompt += mob.name+"이(가) 쓰러졌다.";
+        console.log(prompt);
+        //전리품
+        for(var key in mob.inven){
+          console.log(key);
+          if(mob.inven[key]){
+            let item = mob.inven[key];
+              console.log(item.name);
+            
+            console.log("inventory:"+usr.inven);
+            usr.inven.push(item);
+            prompt += "\n *"+item.name+"* 을 획득했습니다.";
+          }
+        }
+         prompt += addMny(usr, mob.mny);
+        //경험치획득
+         prompt += addExp(usr, mob.exp);
+        mob = null;
+        break;
+      }
+      }else{
+        prompt += usr.name+" -> "+mob.name+" 공격! : 빗나갔다.. \n";
+      }
+      let mob_dmg = (mob.atk - usr.def) + random(mob.level,mob.level/2) - random(mob.level,mob.level/2);
+      if (mob_dmg < 0) mob_dmg = random(2);
+      if(mob_dmg>0){
+        usr.hp[0] -= mob_dmg;
+        prompt += mob.name+"이(가) "+usr.name+"을(를) ";
+        if(mob.weapon){
+          prompt += `${mob.weapon}(으)로 ${mob.expr[random(mob.expr.length-1)]}`;
+        }
+        prompt += ": -"+mob_dmg+" ["+usr.hp.join("/")+"] \n";
+
+        if(usr.hp[0] <= 0){
+          usr.hp[0] = 1;
+          prompt += usr.name+"이(가) 쓰러졌다. ( 아이템을 먹어 회복하거나, `회복 시전` 을 사용하세요. ) ";
+          break;
+        }
+      }else{
+        prompt += mob.name+" -> "+usr.name+" 공격! : 빗나갔다.. \n";
+      }
+    //usr turn
+      //mob.hp[0] -= usr.atk - mob.def;
+    //mob turn
+      //usr.hp[0] -= mob.atk - usr.def;
+      
+    }
+    return prompt;
+    
+  }
+  
+  function goDungeon(usr, bot, message){
+    let res = "";
+    if(usr){
+      console.log("goDungeon");
+      let dungeon_list="";
+      if (!message.match[1]){
+        for(var key in dungeons){
+          if (dungeons[key][0] <= usr.level){
+            dungeon_list += `${key} (요구레벨:${dungeons[key][0]})\n`;
+          }else{
+            dungeon_list += `~${key} (요구레벨:${dungeons[key][0]})~\n`;
+          }
+          
+        }
+        console.log(dungeon_list+"??");
+      }
+      
+      var text = ""
+
+      let prefix = "["+usr.name+"]";
+      text += prefix;
+      const name = message.match[1];
+      let dungeon = dungeons[name];
+      if(dungeon){
+        let mobList = dungeon[1];
+        let mob = genMob(mobList);
+        console.log(mob.name+":"+mob.level+":"+mob.inven[0]);
+        text += ` *${mob.name}* (Lv.${mob.level}) 발견!\n`;
+        text += fight(usr,mob);
+        
+      }else{
+        text += " `사냥 (사냥터이름)` 명령어를 사용하세요.\n"+dungeon_list;
+      }
+
+      bot.reply(message, text);
+    }
+  }
+  
+  
+  function selectDungeon(usr, bot, message){
+    let res = "";
+    if(usr){
+      let callback_id = 'select_dungeon_'+message.user;
+      let avail_list = [];
+      for(var key in dungeons){
+        if (dungeons[key][0] <= usr.level){
+          avail_list.push({"name":key,"text":key,"value":key,"type":"button"});
+        }
+      }
+      let prefix = "["+usr.name+"]";
+    bot.reply(message, {
+        attachments:[
+            {
+                title: prefix+'사냥터를 선택하세요.',
+                callback_id: callback_id,
+                attachment_type: 'default',
+                actions: avail_list
+            }
+        ]
+    });
+    }else{
+      res = "";
+    }
+    bot.reply(message,res);
+  }
+  
+  
+  controller.hears(["^사냥 ([가-힣]+)$","^사냥$"],userScope,(bot,message) => {
     console.log(message.match[0]);
     controller.storage.users.get(message.user, function(err, user){
-      selectDungeon(user.info,bot,message);
+      console.log(user.info);
+      goDungeon(user.info,bot,message);
       controller.storage.users.save(user, function(err, id) {
         console.log("saved!!");
       });
     });
   });
+  
+  
   function throwItem(world,user,bot,message){
   let res = "";
   if(world && user){
     let itemName = message.param[1];
     let item = user.getItem(itemName);
     if(item){
+      console.log("item detected");
       remove(user.inven,item);
       world[user.place].objs.push(item);
       res += `${user.name}님이 ${item.name}을(를) 땅에 버렸습니다.`;
@@ -788,11 +1006,24 @@ function pickItem(world,user,bot,message){
       });
     });
   });
-  
-  controller.hears(["^(소|소지|소지품|템|아이템|소지템)$"],userScope,(bot,message) => {
+  function showUserInfo(user,bot,message){
+    let res = "";
+    if (user){
+      res += `=:+:============= [[ *${user.name}* 님의 정보 ]] =============:+:=\n`;
+      res +="```\n";
+      res += `[레벨] ${user.level} [경험치] ${user.exp.join("/")}\n`;
+      res += `[체력] ${user.hp.join("/")} [마력] ${user.mp.join("/")}\n`;
+      res += `[스탯] 힘:${user.str} 맷집:${user.sta} 민첩:${user.agi} 지식:${user.int} 집중:${user.con} 운:${user.luk} (수련치:${user.stp})\n`
+      res += `[골드] ${user.mny} `;
+      res += `[소지아이템수] ${user.inven.length} \n`;
+    }
+    res += "\n```";
+    bot.reply(message,res);
+  }
+  controller.hears(["^(정보)$"],userScope,(bot,message) => {
     console.log(message.match[0]);
     controller.storage.users.get(message.user, function(err, user){
-      showInven(user.info,bot,message);
+      showUserInfo(user.info,bot,message);
     });
   });
   
@@ -805,7 +1036,7 @@ function pickItem(world,user,bot,message){
   });
   
   
-  controller.hears(["^([가-힣]+) (해제|벗어)$"],userScope,(bot,message) => {
+  controller.hears(["^([가-힣]+) 벗어$"],userScope,(bot,message) => {
     console.log(message.match[0]);
     controller.storage.users.get(message.user, function(err, user){
       unsetEquip(user.info,bot,message);
@@ -816,7 +1047,7 @@ function pickItem(world,user,bot,message){
     });
   });
   
-  controller.hears(["^([가-힣]+) (착용|입어)$"],userScope,(bot,message) => {
+  controller.hears(["^([가-힣]+) 착용$"],userScope,(bot,message) => {
     console.log(message.match[0]);
     controller.storage.users.get(message.user, function(err, user){
       setEquip(user.info,bot,message);
@@ -877,7 +1108,7 @@ controller.hears(['유저확인'], 'direct_message,direct_mention,mention', func
     for (const prop2 in obj){
       const obj2 = obj[prop2];
       if (obj.hasOwnProperty(prop2)) {
-        console.log(`user_data.${prop2} = ${obj2}`);
+         console.log(obj2);
       }
     }
   });
