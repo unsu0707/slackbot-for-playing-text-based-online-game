@@ -948,7 +948,7 @@ bot.reply(message,res);
     });
   });
   
-  function useLottery(user){
+  function useLottery(){
 	  let res = "";
 	  const lucky_num = random(10);
 	  res += `복권을 긁습니다. 행운의 숫자는.. [${lucky_num}]\n`;
@@ -992,7 +992,7 @@ bot.reply(message,res);
    
  */
   function getItemIndex(user,itemname){
-	  for(var i=0;i<user.inven;i++){
+	  for(var i=0;i<user.inven.length;i++){
 		  if(user.inven[i].name == itemname){
 			  return i;
 		  }
@@ -1002,7 +1002,21 @@ bot.reply(message,res);
   function useItem(user,bot,message){
     let res = "";
     if(user){
-		console.log(getItemIndex(user,message.match[1]));
+		const itemInd = getItemIndex(user,message.match[1]);
+		if(itemInd >= 0){
+			let itemName = user.inven[itemInd].name;
+			switch(itemName){
+				case "복권":
+				let [lottMoney, lottMsg] = useLottery();
+				user.mny += lottMoney;
+				res += lottMsg;
+				user.inven.splice(itemInd,1);
+				break;
+				default:
+				res += "그 아이템은 사용할 수 없습니다.";
+				break;
+			}
+		}
 	}
     bot.reply(res);	  
   }
