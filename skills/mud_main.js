@@ -1007,7 +1007,7 @@ bot.reply(message,res);
 	  }
 	  if(ind >= 0){
 		  if(user.inven[ind].name == "복권"){
-			  const award, mess;
+			  let award, mess;
 			  [award, mess] = useLottery(user);
 			  user.mny += award;
 			  res += mess;
