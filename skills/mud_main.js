@@ -991,28 +991,18 @@ bot.reply(message,res);
    4444 : 1000000원
    
  */
-  
+  function getItemIndex(user,itemname){
+	  for(var i=0;i<user.inven;i++){
+		  if(user.inven[i].name == itemname){
+			  return i;
+		  }
+	  }
+	  return -1;
+  }
   function useItem(user,bot,message){
     let res = "";
-	let ind = -1;
     if(user){
-	  item_name = message.match[1];
-	  for(let i=0;i<user.inven.length;i++){
-		  if(user.inven[i]){
-			  if(user.inven[i].name == item_name){
-				 ind = i;
-				 break;
-			  }
-		  }
-	  }
-	  if(ind >= 0){
-		  if(user.inven[ind].name == "복권"){
-			  let award, mess;
-			  [award, mess] = useLottery(user);
-			  user.mny += award;
-			  res += mess;
-		  }
-	  }
+		console.log(getItemIndex(user,message.match[1]));
 	}
     bot.reply(res);	  
   }
