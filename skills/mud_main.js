@@ -948,6 +948,82 @@ bot.reply(message,res);
     });
   });
   
+  function useLottery(user){
+	  let res = "";
+	  const lucky_num = random(10);
+	  res += `복권을 긁습니다. 행운의 숫자는.. [${lucky_num}]\n`;
+	  res += `이후 5개의 숫자를 긁어서 같은 숫자가 나온 만큼 당첨금이 확정됩니다.`;
+	  let count = 0;
+	  let award = 100;
+	  for(let i=1;i<=5;i++){
+		  const num = random(10);
+		  res += `[${i}번째] ${num}`;
+		  if(lucky_num==num){
+			res += "(당)";
+			award += random(award,award/2);
+			award -= random(award/2,0);
+			award *= random(11,9);
+			count += 2;
+		  }else if(lucky_num-1 == num || lucky_num+1 == num){
+			res += "(깝)";
+			award += random(award,award/2);
+			award -= random(award/2,0);
+			award *= random(6,4);
+			count += 1;
+		  }else{
+			award += random(award,award/2);
+			award -= random(award/2,0);
+		  }
+	  }
+	  res += `\n당첨금은 ${award}골드 입니다.`;
+	  return [award, res];
+  }
+ /*
+   4일때
+   복권가격 1000원
+   0000 : 0원
+   0004 : 1000원
+   0044 : 10000원
+   0034 : 5000원
+   0444 : 100000원
+   0344 : 50000원
+   0334 : 
+   4444 : 1000000원
+   
+ */
+  
+  function useItem(user,bot,message){
+    let res = "";
+	let ind = -1;
+    if(user){
+	  item_name = message.match[1];
+	  for(let i=0;i<user.inven.length;i++){
+		  if(user.inven[i]){
+			  if(user.inven[i].name == item_name){
+				 ind = i;
+				 break;
+			  }
+		  }
+	  }
+	  if(ind >= 0){
+		  if(user.inven[ind].name == "복권"){
+			  const award, mess;
+			  [award, mess] = useLottery(user);
+			  user.mny += award;
+			  res += mess;
+		  }
+	  }
+	}
+    bot.reply(res);	  
+  }
+  
+  controller.hears(["^([가-힣]+) 사용$"],userScope,(bot,message) => {
+    console.log(message.match[0]);
+    controller.storage.users.get(message.user, function(err, user){
+      useItem(user.info,bot,message);
+      controller.storage.users.save(user, function(err, id){console.log("User saved!!");});
+    });
+  });
   
   function throwItem(world,user,bot,message){
   let res = "";
