@@ -7,12 +7,13 @@ module.exports = function(controller) {
     
   const dungeons = {"초보수련장":[1,{"목각인형":100}],
                     "초원":[1,{"토끼":40,"다람쥐":50,"들개":10}],
-                    "버섯숲":[3,{"팽이벌레":20,"목이벌레":20,"석이벌레":20,"송이벌레":20,"꽃송이벌레":10,"새송이벌레":10}],
-                    "가시동굴":[5,{"풀덩굴두더지":20,"가시덩굴두더지":20,"독거미":20,"작은뱀":20,"큰뱀":20}],
-                    "일일사던전":[6,{"취활중":10,"나반장":25,"히바리가오카역장":25,"뽀로리":20,"JUN님":20}]
+                    "버섯숲":[5,{"팽이벌레":20,"목이벌레":20,"석이벌레":20,"송이벌레":20,"꽃송이벌레":10,"새송이벌레":10}],
+                    "가시동굴":[10,{"풀덩굴두더지":20,"가시덩굴두더지":20,"독거미":20,"작은뱀":20,"큰뱀":20}],
+					"초급광산":[18,{"게으른광부":20,"박쥐":20,"황금박쥐":5,"흙골렘":20,"작은골렘":20,"광산두더지":15}],
+					"중급광산":[26,{"철골렘":10,"청동골렘":10,"백은골렘":10,"황금골렘":5,"은박쥐":25,"고블린":20,"홉고블린":15}],
                    };
   const mob_info = {
-  "목각인형":{level:1,item:{"나무토막":20, "회복스킬북":80}},
+  "목각인형":{level:1,item:{"나무토막":20, "회복스킬북":1}},
   "토끼":{level:2,item:{"토끼고기":90, "복권":10}},
   "다람쥐":{level:3,item:{"도토리":80, "알밤":10, "복권":10}},
   "들개":{level:5,item:{"뼈조각":20}},
@@ -24,15 +25,23 @@ module.exports = function(controller) {
   "새송이벌레":{level:20,item:{"식용버섯":30, "힘의반지":3, "지식의반지":3}},
   "풀덩굴두더지":{level:22,item:{"힘의반지":20},},
   "가시덩굴두더지":{level:24,item:{"지식의반지":20},},
-  "독거미":{level:26,item:{"힘의반지":20,"지식의반지":20},},
-  "작은뱀":{level:23,item:{"힘의반지":20,"지식의반지":20},},
-  "큰뱀":{level:27,item:{"힘의반지":20,"지식의반지":20},},
-    "나반장":{level:30,item:{},weapon:"강철맥북",expr:["모서리로 찍었다", "펼쳤다 접어서 얼굴을 짜부시켰다", "때렸다"]},
-    "히바리가오카역장":{level:35,item:{},weapon:"와인병",expr:["때렸다","찔렀다"]},
-    "뽀로리":{level:50,item:{},weapon:"황금도토리",expr:["떼ㅐ렷슴다","명치룰 가ㄱ갹격했슴ㅏㄷ", "던져서 맞췄슴다"]},
-    "깜모":{level:100,item:{},},
-    "취활중":{level:999,item:{},weapon:"국어사전",expr:["그럼, 공격 해봅니다.","개인 프라이버시가 중요하다는 그런 입장을 가지고 여러 의견을 한마디로 이야기 하려고 했을 때 다들 저의 발언을 잘 들어주셨으면 감사하겠습니다.", "P마크가 있는 기업체를 정리하며 취업을 준비하는 그런 입장을 가지려고 노력하고 있습니다.", "그럼, 타격 남겨봅니다.", "그럼, 의견 남겨봅니다.", "그럼, 한대 때려봅니다."]},
-    "JUN님":{level:40,item:{},weapon:"강철낚시대",expr:["'안녕허새요'라고 인사하며 때렸다","낚시바늘을 입에 걸었다","휘둘렀다"]}
+  "독거미":{level:26,item:{"복권":5}},
+  "작은뱀":{level:23,item:{"뱀고기":25}},
+  "큰뱀":{level:27,item:{"뱀고기":25}},
+  "게으른광부":{level:34,item:{"낡은곡괭이":5,"광부조끼":5,"복권":5,"돌조각":10,"철조각":10,"청동조각":5,"백은조각":3,"황금조각":2}},
+  "박쥐":{level:30,item:{"박쥐의날개":20,"복권":5,"중급회복물약":5,"청동조각":5,"복권":3}},
+  "황금박쥐":{level:37,item:{"박쥐의날개":20,"황금조각":30,"복권":25}},
+  "흙골렘":{level:42,item:{"흙조각":30,"복권":3}},
+  "작은골렘":{level:40,item:{"돌조각":30,"복권":5}},
+  "광산두더지":{level:34,item:{"복권":5}},
+  "철골렘":{level:44,item:{"철조각":30,"복권":5}},
+  "청동골렘":{level:46,item:{"청동조각":28,"복권":5}},
+  "백은골렘":{level:48,item:{"백은조각":30,"복권":5}},
+  "황금골렘":{level:55,item:{"황금조각":10,"복권":15}},
+  "은박쥐":{level:36,item:{"백은조각":10,"복권":10}},
+  "고블린":{level:50,item:{"고블린대거":5,"고블린철갑":5,"복권":5}},
+  "홉고블린":{level:60,item:{"고블린대거":5,"고블린철갑":5,"복권":5}},
+  
   };  
   
   const item_info = {
@@ -48,7 +57,22 @@ module.exports = function(controller) {
     "나무토막":{price:5},
     "식용버섯":{price:100,stat:{hp:50}},
     "회복스킬북":{price:1000},
+	"뱀고기":{price:200,stat:{hp:100}},
+	"골렘조각":{price:100},
+	"철조각":{price:100},
+	"청동조각":{price:100},
+	"백은조각":{price:100},
+	"황금조각":{price:100},
+	"흙조각":{price:100},
+	"돌조각":{price:100},
+	"낡은곡괭이":{type:"무기",stat:{atk:12},price:100,dur:50},
+	"고블린대거":{type:"무기",stat:{atk:25},price:100,dur:50},
+	"광부조끼":{type:"방어구",stat:{def:15},price:100,dur:50},
+	"고블린철갑":{type:"방어구",stat:{def:30},price:100,dur:50},
+	"박쥐의날개":{price:100},
+	"중급회복물약":{price:100,stat:{hp:500}},
   }
+  
   
   
   function random(max, min = 0){
@@ -948,34 +972,29 @@ bot.reply(message,res);
     });
   });
   
-  function useLottery(user){
+  function useLottery(){
 	  let res = "";
-	  const lucky_num = random(10);
+	  const lucky_num = random(20);
 	  res += `복권을 긁습니다. 행운의 숫자는.. [${lucky_num}]\n`;
-	  res += `이후 5개의 숫자를 긁어서 같은 숫자가 나온 만큼 당첨금이 확정됩니다.`;
+	  let award = random(15,7)*lucky_num;
+	  res += `기본금액=${award} x (5배x당첨횟수,2배x당첨횟수)\n`;
 	  let count = 0;
-	  let award = 100;
-	  for(let i=1;i<=5;i++){
-		  const num = random(10);
-		  res += `[${i}번째] ${num}`;
+    let count2 = 0;
+	  for(let i=1;i<=10;i++){
+		  const num = random(20);
 		  if(lucky_num==num){
-			res += "(당)";
-			award += random(award,award/2);
-			award -= random(award/2,0);
-			award *= random(11,9);
-			count += 2;
+		    res += `*${num}* (당첨), `;
+        count ++;
 		  }else if(lucky_num-1 == num || lucky_num+1 == num){
-			res += "(깝)";
-			award += random(award,award/2);
-			award -= random(award/2,0);
-			award *= random(6,4);
-			count += 1;
+		    res += `*${num}* (까비), `;
+        count2 ++;
 		  }else{
-			award += random(award,award/2);
-			award -= random(award/2,0);
-		  }
+        res += `~${num}~, `;
+      }
 	  }
-	  res += `\n당첨금은 ${award}골드 입니다.`;
+    award *= Math.pow(5,count);
+    award *= Math.pow(2,count2);
+	  res += `\n당첨금은 ${award}골드 입니다. (${count}당첨 ${count2}까비)`;
 	  return [award, res];
   }
  /*
@@ -991,30 +1010,38 @@ bot.reply(message,res);
    4444 : 1000000원
    
  */
-  
+  function getItemIndex(user,itemname){
+	  for(var i=0;i<user.inven.length;i++){
+		  if(user.inven[i].name == itemname){
+			  return i;
+		  }
+	  }
+	  return -1;
+  }
   function useItem(user,bot,message){
     let res = "";
-	let ind = -1;
     if(user){
-	  item_name = message.match[1];
-	  for(let i=0;i<user.inven.length;i++){
-		  if(user.inven[i]){
-			  if(user.inven[i].name == item_name){
-				 ind = i;
-				 break;
-			  }
-		  }
-	  }
-	  if(ind >= 0){
-		  if(user.inven[ind].name == "복권"){
-			  const award, mess;
-			  [award, mess] = useLottery(user);
-			  user.mny += award;
-			  res += mess;
-		  }
-	  }
+		const itemInd = getItemIndex(user,message.match[1]);
+      console.log(itemInd);
+		if(itemInd >= 0){
+			let itemName = user.inven[itemInd].name;
+      console.log(itemName);
+			switch(itemName){
+				case "복권":
+				let [lottMoney, lottMsg] = useLottery();
+        user.inven.splice(itemInd,1);
+				user.mny += lottMoney;
+				res += lottMsg;
+				break;
+				default:
+				res += "그 아이템은 사용할 수 없습니다.";
+				break;
+			}
+		}else {
+			res += "그런 아이템이 없습니다."+itemInd;
+		}
 	}
-    bot.reply(res);	  
+    bot.reply(message,res);	  
   }
   
   controller.hears(["^([가-힣]+) 사용$"],userScope,(bot,message) => {
